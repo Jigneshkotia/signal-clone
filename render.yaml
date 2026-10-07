@@ -1,0 +1,31 @@
+# Render blueprint for the FastAPI backend.
+#
+# The frontend deploys separately to Vercel (see README). Render is used rather
+# than a serverless host because the app needs one long-lived process: the
+# WebSocket connection registry lives in memory and SQLite is a local file.
+services:
+  - type: web
+    name: signal-clone-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Bind 0.0.0.0 and Render's injected $PORT, not the uvicorn defaults.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      # Generated once by Render and kept across deploys. Changing it would
+      # invalidate every issued JWT.
+      - key: JWT_SECRET
+        generateValue: true
+      # Comma-separated. Set this to your Vercel production URL after the first
+      # frontend deploy; *.vercel.app preview URLs are matched by a regex in
+      # app/main.py and do not need listing.
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # The free tier has an ephemeral disk, so the database is empty on every
+      # deploy. Seeding on boot keeps the hosted demo usable.
+      - key: SEED_ON_STARTUP
+        value: "true"
