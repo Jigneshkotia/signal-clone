@@ -82,7 +82,16 @@ app.include_router(messages.router, prefix=API_PREFIX)
 app.include_router(realtime_router.router)
 
 
-@app.get("/", tags=["meta"])
+#
+# Both meta endpoints answer HEAD as well as GET.
+#
+# Plain Starlette adds HEAD to any GET route automatically, but FastAPI's
+# APIRoute does not -- so `@app.get` alone answers `HEAD /` with 405. Platform
+# port scanners and uptime checks (Render's included) probe with HEAD, read the
+# 405 as the service being unhealthy, and kill the deploy even though the app
+# started cleanly.
+#
+@app.api_route("/", methods=["GET", "HEAD"], tags=["meta"])
 def root() -> dict[str, str]:
     return {
         "service": settings.app_name,
@@ -91,7 +100,7 @@ def root() -> dict[str, str]:
     }
 
 
-@app.get("/health", tags=["meta"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["meta"])
 def health() -> dict[str, object]:
     """Liveness probe. Also reports live socket counts, which is handy in a demo."""
     return {

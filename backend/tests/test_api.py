@@ -216,3 +216,16 @@ def test_health_endpoint(client: TestClient) -> None:
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_meta_endpoints_answer_head_probes(client: TestClient) -> None:
+    """Platform port scanners and uptime checks probe with HEAD, not GET.
+
+    FastAPI's APIRoute does not add HEAD to a GET route the way plain Starlette
+    does, so `@app.get("/")` alone answers `HEAD /` with 405 -- which Render
+    reads as an unhealthy service and kills the deploy. Both meta routes declare
+    HEAD explicitly; this pins that down.
+    """
+    for path in ("/", "/health"):
+        assert client.head(path).status_code == 200, path
+        assert client.get(path).status_code == 200, path
