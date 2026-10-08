@@ -20,11 +20,12 @@ services:
       # invalidate every issued JWT.
       - key: JWT_SECRET
         generateValue: true
-      # Comma-separated. Set this to your Vercel production URL after the first
-      # frontend deploy; *.vercel.app preview URLs are matched by a regex in
-      # app/main.py and do not need listing.
+      # Every *.vercel.app host -- production and previews alike -- is already
+      # allowed by the regex in app/main.py, so nothing needs adding here for a
+      # normal Vercel deploy. Append your own domain (comma-separated) only if
+      # you put the frontend on a custom one.
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: "http://localhost:3000"
       # The free tier has an ephemeral disk, so the database is empty on every
       # deploy. Seeding on boot keeps the hosted demo usable.
       - key: SEED_ON_STARTUP
